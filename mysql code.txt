@@ -1,0 +1,198 @@
+USE anime_store;
+
+CREATE TABLE users 
+(
+	Uid int auto_increment not null,
+    Uname varchar(100) not null unique,
+    UFullName varchar(225),
+    Uage int,
+    Ugender ENUM('Male','Female'),
+    Uemail varchar(100) not null unique,
+    Upassword varchar(225) not null,
+    Urole  ENUM('customer','admin') not null default 'customer',
+    primary key (Uid)
+);
+
+CREATE TABLE products
+(
+	Pid int auto_increment not null,
+	Pname varchar(100) unique not null,
+    Pprice DECIMAL(10, 2) NOT NULL,
+    Pdescription varchar(225),
+    Pquantity int not null,
+    Pimage_url varchar(225) not null,
+    Pcategory enum('Merchandise','Cosplay','Manga/comics'),
+    primary key (Pid)
+);
+
+CREATE TABLE orders (
+    Oid INT NOT NULL AUTO_INCREMENT,
+    Uid INT NOT NULL,  
+    Odate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    OAmount DECIMAL(10, 2) NOT NULL, 
+    PRIMARY KEY (Oid),
+    FOREIGN KEY (Uid) REFERENCES users(Uid) 
+);
+
+
+-- Select your database schema
+USE anime_store;
+
+
+CREATE TABLE order_items (
+    Iid INT NOT NULL AUTO_INCREMENT, 
+    Oid INT NOT NULL,     
+    Pid INT NOT NULL,   
+    IQuantity INT NOT NULL,
+    IPriceAtPurchase DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (Iid), 
+    FOREIGN KEY (Oid) REFERENCES orders(Oid),
+    FOREIGN KEY (Pid) REFERENCES products(Pid)
+);
+
+
+
+#inserting data
+USE anime_store;
+
+INSERT INTO products (Pname, Pprice, Pdescription, Pquantity, Pimage_url, Pcategory)
+VALUES
+#Clothing category
+('Alhaithaim Shirt',
+ 400,
+ 'A green Alhaitham themes shirt',
+ 30,
+ 'http://10.0.2.2:8080/products_images/Clothing/AlhaithamShirt.png',
+ 'Clothing'),
+ 
+('Furina Shoes',
+ 250,
+ 'The Hydro Archon 	Furina shoes',
+ 20,
+ 'http://10.0.2.2:8080/products_images/Clothing/FurinaShoes.png',
+ 'Clothing'),
+ 
+('Kaveh Shirt',
+ 350,
+ 'Kaveh red shirt',
+ 15,
+ 'http://10.0.2.2:8080/products_images/Clothing/KevehShirt.png',
+ 'Clothing'),
+ 
+ ('Kazuha Hoodie',
+ 500,
+ 'Kaedarha Kazuha hoodie autumn leaves',
+ 30,
+ 'http://10.0.2.2:8080/products_images/Clothing/KazuhaHoodie.png',
+ 'Clothing'),
+ 
+  ('Kinich Jacket',
+ 450,
+ 'Kinich iconic jacket',
+ 20,
+ 'http://10.0.2.2:8080/products_images/Clothing/KinichJacket.png',
+ 'Clothing'),
+ 
+('Wriothesley shoes',
+ 450,
+ 'Wriothesley black themed shoes',
+ 20,
+ 'http://10.0.2.2:8080/products_images/Clothing/WriothesleyShoes.png',
+ 'Clothing'),
+ 
+ ('Yae Miko shirt',
+ 400,
+ 'Yae Miko pink and white shirt with flowers',
+ 20,
+ 'http://10.0.2.2:8080/products_images/Clothing/YaeMikoShirt.png',
+ 'Clothing'),
+ 
+('Zhongli T-shirt',
+ 400,
+ 'The Geo Archon Zhongli themed T-shirt with geo rocks',
+ 10,
+ 'http://10.0.2.2:8080/products_images/Clothing/ZhongliShirt.png',
+ 'Clothing'),
+ 
+
+ #Figurines
+ ('Xilonen Sword',
+ 150,
+ 'Xilonen signiture sword weapon',
+ 15,
+ 'http://10.0.2.2:8080/products_images/Cosplay/XilonenSwordCosplaypng',
+ 'Cosplay');
+ 
+ USE anime_store;
+
+INSERT INTO products (Pname, Pprice, Pdescription, Pquantity, Pimage_url, Pcategory)
+VALUES
+('Aether Figurine', 55, 'Figure of Aether, the male main character.', 30, 'http://10.0.2.2:8080/products_images/Figurines/AetherFigurine.png', 'Figurines'),
+('Ayaka Figurine', 62, 'Highly detailed figure of Kamisato Ayaka.', 25, 'http://10.0.2.2:8080/products_images/Figurines/AyakaFigurine.png', 'Figurines'),
+('Citlali Figurine', 58, 'Figure of Citlali, the Hydro character.', 15, 'http://10.0.2.2:8080/products_images/Figurines/CitlaliFigurine.png', 'Figurines'),
+('Ganyu Figurine', 68, 'Figure of Ganyu, the Cryo archer.', 40, 'http://10.0.2.2:8080/products_images/Figurines/GanyuFigurine.png', 'Figurines'),
+('Nahida Figurine', 75, 'Figure of the Dendro Archon, Nahida.', 20, 'http://10.0.2.2:8080/products_images/Figurines/NahidaFigurine.png', 'Figurines'),
+('Shenhe Figurine', 70, 'Figure of the Cloud Retainer disciple, Shenhe.', 18, 'http://10.0.2.2:8080/products_images/Figurines/ShenheFigurine.png', 'Figurines'),
+('Shogun Figurine', 85, 'Figurine of the Raiden Shogun.', 12, 'http://10.0.2.2:8080/products_images/Figurines/ShogunFigurine.png', 'Figurines'),
+('Xiao Figurine', 60, 'Figure of the Vigilant Yaksha, Xiao.', 28, 'http://10.0.2.2:8080/products_images/Figurines/XiaoFigurine.png', 'Figurines'),
+
+-- The Furina Cosplay item and the Nigguang item:
+('Furina Cosplay Set', 350, 'Complete Cosplay set for Furina.', 5, 'http://10.0.2.2:8080/products_images/Cosplay/FurinaCosplay.png', 'Cosplay'),
+('Nigguang Statue', 95, 'Detailed statue of the Tianquan, Nigguang.', 15, 'http://10.0.2.2:8080/products_images/Figurines/NigguangFigurine.png', 'Figurines');
+
+USE anime_store;
+
+INSERT INTO products (Pname, Pprice, Pdescription, Pquantity, Pimage_url, Pcategory)
+VALUES
+ #Cosplay category
+ ('Capitano Helmet',
+ 200,
+ 'Capitano wearable facehelmet',
+ 5,
+ 'http://10.0.2.2:8080/products_images/Cosplay/CapitanoHelmetCosplay.png',
+ 'Cosplay'),
+ 
+  ('Eula',
+ 600,
+ 'Eula full cosplay with Skyward sword',
+ 8,
+ 'http://10.0.2.2:8080/products_images/Cosplay/EulaCosplay.png',
+ 'Cosplay'),
+ 
+  ('Eula wig',
+ 100,
+ 'Eula bright blue wig',
+ 10,
+ 'http://10.0.2.2:8080/products_images/Cosplay/EulaWig.png',
+ 'Cosplay'),
+ 
+('Flins Polearm', 250,'Flins signiture Flins polearm weapon', 10,'http://10.0.2.2:8080/products_images/Cosplay/FlinsPolearmCosplay.png','Cosplay'),
+ 
+ ('Hu Tao Cosplay',400,'Hu Tao full cosplay', 20,'http://10.0.2.2:8080/products_images/Cosplay/HuTaoCosplay.png','Cosplay'),
+ 
+  ('Klee Cosplay', 350,'Klee full cosplay', 15,'http://10.0.2.2:8080/products_images/Cosplay/KleeCosplay.png','Cosplay'),
+ 
+('Xilonen Sword',\150,'Xilonen signiture sword weapon',15,'http://10.0.2.2:8080/products_images/Cosplay/XilonenSwordCosplaypng','Cosplay');
+ 
+ USE anime_store;
+
+INSERT INTO products (Pname, Pprice, Pdescription, Pquantity, Pimage_url, Pcategory)
+VALUES
+('Genshin Chapter 1: Red Wire Manga', 200, 'First chapter of the official Genshin Impact manga.', 30, 'http://10.0.2.2:8080/products_images/Manga/GenshinCh1Manga.png', 'Manga/comics'),
+('Genshin Chapter 2: Flame Born Manga', 200, 'Second chapter of the official Genshin Impact manga.', 30, 'http://10.0.2.2:8080/products_images/Manga/GenshinCh2Manga.png', 'Manga/comics'),
+('Genshin Chapter 3: Lost and Found Manga', 200, 'Third chapter of the official Genshin Impact manga.', 40, 'http://10.0.2.2:8080/products_images/Manga/GenshinCh3Manga.png', 'Manga/comics'),
+('Genshin Chapter 4: Surprise Finding Manga', 150, 'Fourth chapter of the official Genshin Impact manga.', 20, 'http://10.0.2.2:8080/products_images/Manga/GenshinCh4Manga.png', 'Manga/comics'),
+('Genshin Chapter 5: Congress Grounds Manga', 150, 'Fifth chapter of the official Genshin Impact manga.', 20,'http://10.0.2.2:8080/products_images/Manga/GenshinCh5Manga.png', 'Manga/comics'),
+('Genshin Prologue: Songs of the Wind Manga', 100, 'Prologue chapter, covering Venti and the first adventures.', 75, 'http://10.0.2.2:8080/products_images/Manga/GenshinPrologueManga.png', 'Manga/comics');
+
+USE anime_store;
+
+INSERT INTO products (Pname, Pprice, Pdescription, Pquantity, Pimage_url, Pcategory)
+VALUES
+('Anemo Slime Plushie', 40, 'Soft, squishy Anemo Slime plush.', 75, 'http://10.0.2.2:8080/products_images/Plushies/AnemoSlimePlushieMerch.png', 'Plushies'),
+('Cacucu Plushie', 60, 'Cute Cacucu character plush toy.', 60, 'http://10.0.2.2:8080/products_images/Plushies/CacucuPlushieMerch.png', 'Plushies'),
+('Citlali Plushie', 70, 'Large Citlali character plushie.', 50, 'http://10.0.2.2:8080/products_images/Plushies/CitlaliCitlalinPlushieMerch.png', 'Plushies'),
+('Mizuki Baku Plushie', 45, 'Fluffy Mizuki Baku plush.', 45, 'http://10.0.2.2:8080/products_images/Plushies/MizukiBakuPlushieMerch.png', 'Plushies'),
+('Mualani Shark Plushie', 85, 'Unique shark-shaped Mualani character plush.', 30, 'http://10.0.2.2:8080/products_images/Plushies/MualaniSharkPlushieMerch.png', 'Plushies'),
+('Saurian Plushie Set', 125, 'Set of small Saurian character plushies.', 20, 'http://10.0.2.2:8080/products_images/Plushies/SaurianPlushiesMerch.png', 'Plushies');
+
