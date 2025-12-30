@@ -1,270 +1,265 @@
-// lib/pages/home_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:anime_store/models/product.dart';
-import 'package:anime_store/services/product_service.dart';
+import 'package:http/http.dart' as http;
+import '../models/product.dart';
+import '../services/product_service.dart';
+import '../services/auth_service.dart';
+import 'signup_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isLoggedIn = false;
-  String _currentFilter = 'All Products';
-  late Future<List<Product>> _productsFuture;
   final ProductService _productService = ProductService();
+  late Future<List<Product>> _productsFuture;
+  String _currentFilter = 'All Products';
 
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  // Admin logic state
+  bool _isDeleteMode = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchProducts(); // Initial fetch of all products
+    _productsFuture = _productService.fetchProducts(category: _currentFilter);
   }
 
-  // Function to fetch products based on the current filter
-  void _fetchProducts() {
+  void _refreshProducts() {
     setState(() {
-      // Calls the service with the current filter string
       _productsFuture = _productService.fetchProducts(category: _currentFilter);
     });
   }
 
-  // Function called when a category is tapped in the Drawer
-  void _filterProducts(String category) {
-    setState(() {
-      _currentFilter = category;
-      _fetchProducts(); // Fetch data for the new category
-      Navigator.of(context).pop(); // Close drawer after selection
-    });
-  }
+  // Logic for Admin to Delete Item
+  void _confirmDelete(Product p) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: Text("Are you sure you want to delete ${p.name}?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // FIX: This calls the specific delete route we added to the server
+              final response = await http.delete(
+                  Uri.parse('http://10.0.2.2:8080/products/delete/${p.id}')
+              );
 
-  // --- Widget Builders ---
-
-  Widget _buildDrawer() {
-    // Builds the sidebar with categories
-    final List<String> categories = ['Cosplay', 'Figurines', 'Manga', 'Plushies', 'Clothing'];
-
-    return Drawer(
-      child: Column(
-        children: [
-          // Logo Section (DrawerHeader)
-          DrawerHeader( // FIX 1: Removed 'const'
-            decoration: const BoxDecoration(color: Colors.blueGrey),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'C:\Users\Msi\StudioProjects\anime_store_api\public_assets',
-                    height: 60,
-                  ),
-                  const Text('Anime Store', style: TextStyle(color: Colors.white, fontSize: 16)),
-                ],
-              ),
-            ),
-          ),
-          // Categories List
-          ...categories.map((cat) => ListTile( // FIX 2: Removed 'const'
-            title: Text(cat),
-            // Highlight the selected category
-            selected: _currentFilter == cat, // Uses state, so cannot be const
-            onTap: () => _filterProducts(cat),
-          )).toList(),
-          const Divider(),
-          // Home button to clear filter
-          ListTile(
-            title: const Text('All Products'),
-            selected: _currentFilter == 'All Products',
-            onTap: () => _filterProducts('All Products'),
+              if (response.statusCode == 200) {
+                _refreshProducts(); // Refreshes the UI after successful delete
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Item deleted successfully"))
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: ${response.statusCode}"))
+                );
+              }
+            },
+            child: const Text("OK", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFooterNavigationBar() {
-    // Builds the persistent bottom navigation bar
-    return BottomNavigationBar(
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart/Orders'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-      ],
-      onTap: (index) {
-        // Navigation logic will go here
-        print('Tapped index $index');
-      },
-    );
-  }
-
-  Widget _buildProductGrid(List<Product> products) {
-    // Creates the grid view with 2 columns
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 2 items wide
-        childAspectRatio: 0.7, // Adjust height to fit image and text
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        final product = products[index];
-        final String fullImageUrl = _baseUrl + product.imageUrl;
-
-        return Card(
-          elevation: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.network(
-                    fullImageUrl,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
-                    },
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
-                child: Text(
-                    product.category,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12)
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                        '\$${product.price.toStringAsFixed(2)}',
-                        style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)
-                    ),
-                  ),
-                  // Add to Cart Button (Far Right)
-                  IconButton(
-                    icon: const Icon(Icons.add_shopping_cart, size: 20, color: Colors.blueGrey),
-                    onPressed: () {
-                      // Add to cart logic here
-                      print('Added ${product.name} to cart');
-                    },
-                  ),
-                ],
-              ),
-            ],
+  void _showQuantityDialog(Product p) {
+    int quantity = 1;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Add ${p.name} to Cart"),
+        content: TextField(
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(hintText: "Enter Quantity"),
+          onChanged: (val) => quantity = int.tryParse(val) ?? 1,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("successfully added to cart"))
+                );
+              },
+              child: const Text("OK")
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isAdmin = AuthService.currentUser?.role == 'admin';
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Display the Logo
-            Image.asset(
-              'assets/app_logo.png',
-              height: 30, // Adjust size as needed
-            ),
-            const SizedBox(width: 8),
-            // Display the current filter/category name
-            Text(_currentFilter, style: const TextStyle(fontSize: 18)),
-          ],
-        ),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Image.asset('assets/app_logo.png', height: 35),
         actions: [
-          // User Icon on the right
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') {
-                setState(() => _isLoggedIn = false);
-              }
-            },
-            itemBuilder: (context) => [
-              if (_isLoggedIn)
-                const PopupMenuItem(value: 'logout', child: Text('Log Out'))
-              else ...[
-                const PopupMenuItem(value: 'login', child: Text('Log In')),
-                const PopupMenuItem(value: 'signup', child: Text('Sign Up')),
+          Padding(
+            padding: const EdgeInsets.only(right: 15),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.account_circle, color: Colors.black, size: 24),
+                Text(
+                    AuthService.currentUser?.firstName ?? "Guest",
+                    style: const TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold)
+                ),
               ],
-            ],
-            icon: const Icon(Icons.person),
-          ),
+            ),
+          )
         ],
       ),
-      drawer: _buildDrawer(), // Sidebar (Drawer)
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      drawer: Drawer(
+        child: ListView(
           children: [
-            // --- Search Bar ---
-            const TextField(
-              decoration: InputDecoration(
-                hintText: 'Search all products...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-              ),
-              // Search logic goes here
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blueGrey),
+              child: Text("Anime Store", style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-            const SizedBox(height: 20),
-
-            // --- Quote Section ---
-            const Center(
-              child: Text(
-                "\"We deliver your favourite Anime merchandise to your doorstep\"",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.blueGrey),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 10),
-
-            // --- Product Display (Grid) ---
-            FutureBuilder<List<Product>>(
-              future: _productsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error loading products: ${snapshot.error}'));
-                } else if (snapshot.data == null || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No products found for this category.'));
-                } else {
-                  return _buildProductGrid(snapshot.data!);
-                }
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Login / Sign Up'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (c) => const SignupPage()));
               },
             ),
           ],
         ),
       ),
-      bottomNavigationBar: _buildFooterNavigationBar(), // Footer Navigation
+      body: Column(
+        children: [
+          // Filter Row
+          SizedBox(
+            height: 60,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              children: ['All Products', 'Clothing', 'Figurines', 'Cosplay'].map((cat) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ChoiceChip(
+                  label: Text(cat),
+                  selected: _currentFilter == cat,
+                  onSelected: (selected) {
+                    if (selected && _currentFilter != cat) {
+                      _currentFilter = cat;
+                      _refreshProducts();
+                    }
+                  },
+                ),
+              )).toList(),
+            ),
+          ),
+
+          // Admin Control Buttons (Only visible if admin is logged in)
+          if (isAdmin)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(onPressed: () {}, child: const Text("Add Item")),
+                  ElevatedButton(onPressed: () {}, child: const Text("Edit Item")),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isDeleteMode ? Colors.red : Colors.grey[300],
+                    ),
+                    onPressed: () {
+                      setState(() => _isDeleteMode = !_isDeleteMode);
+                    },
+                    child: Text(_isDeleteMode ? "Cancel Delete" : "Delete Item", style: TextStyle(color: _isDeleteMode ? Colors.white : Colors.black)),
+                  ),
+                ],
+              ),
+            ),
+
+          // Product Grid
+          Expanded(
+            child: FutureBuilder<List<Product>>(
+              future: _productsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                if (snapshot.hasError) return const Center(child: Text("Error loading products"));
+                final products = snapshot.data!;
+                return GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                  ),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final p = products[index];
+                    return GestureDetector(
+                      onTap: () {
+                        if (_isDeleteMode) {
+                          _confirmDelete(p);
+                        }
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: _isDeleteMode ? Border.all(color: Colors.red, width: 2) : null,
+                          ),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Image.network(
+                                  'http://10.0.2.2:8080${p.imageUrl}',
+                                  errorBuilder: (c,e,s) => const Icon(Icons.image_not_supported, size: 50),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                    Text("\$${p.price.toStringAsFixed(2)}", style: const TextStyle(color: Colors.deepOrange)),
+                                    if (!_isDeleteMode)
+                                      IconButton(
+                                        icon: const Icon(Icons.add_shopping_cart, color: Colors.blueGrey),
+                                        onPressed: () {
+                                          if (AuthService.currentUser == null) {
+                                            Navigator.push(context, MaterialPageRoute(builder: (c) => const SignupPage()));
+                                          } else {
+                                            _showQuantityDialog(p);
+                                          }
+                                        },
+                                      )
+                                    else
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 8),
+                                        child: Icon(Icons.delete_forever, color: Colors.red),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

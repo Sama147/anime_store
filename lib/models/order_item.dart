@@ -1,11 +1,9 @@
-// lib/models/order_item.dart
-
 class OrderItem {
   final int id;
   final int orderId;
   final int productId;
   final int quantity;
-  final double priceAtPurchase;
+  final double priceAtPurchase; // Stores the price at the time of order
 
   OrderItem({
     required this.id,
@@ -21,6 +19,7 @@ class OrderItem {
       orderId: json['orderId'] as int,
       productId: json['productId'] as int,
       quantity: json['quantity'] as int,
+      // Using .toDouble() ensures it won't crash if the database sends an integer
       priceAtPurchase: (json['priceAtPurchase'] as num).toDouble(),
     );
   }
